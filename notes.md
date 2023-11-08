@@ -1,0 +1,1 @@
+* home base or hangar: Create a home or hangar for their champions. They will have the option to adorn their home with various trinkets codes by them.
