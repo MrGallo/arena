@@ -6,10 +6,13 @@ import pygame
 
 class BaseView(ABC):
     @abstractmethod
-    def event_loop(self, events: List[pygame.event.Event]) -> None: ...
+    def event_loop(self, events: List[pygame.event.Event]) -> None:
+        pass
 
     @abstractmethod
-    def update(self) -> None: ...
+    def update(self) -> None:
+        pass
 
     @abstractmethod
-    def draw(self, surface: pygame.Surface) -> None: ...
+    def draw(self, surface: pygame.Surface) -> None:
+        pass

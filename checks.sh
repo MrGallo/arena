@@ -1,3 +1,3 @@
 #!/bin/bash
-pycodestyle arena --ignore=501
+pycodestyle arena --ignore=E501
 mypy arena --strict

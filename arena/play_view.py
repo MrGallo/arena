@@ -4,7 +4,6 @@ import pygame
 
 from arena.my_game import MyGame
 from arena.base_view import BaseView
-from arena.pause_view import PauseView
 
 
 class PlayView(BaseView):
@@ -20,6 +19,7 @@ class PlayView(BaseView):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
+                    from arena.pause_view import PauseView
                     MyGame.set_current_view(PauseView(self))
 
     def update(self) -> None:
