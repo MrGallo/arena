@@ -5,9 +5,6 @@ as well as a smaller version (50x50) so you can make sure it looks good at both 
 
 Although it might take a little getting used to, this class-based system will allow easier 
 integration into a larger code-base.
-
-1. Create a champion that is just a circle moving on the surface.
-2. 
 """
 
 from typing import ClassVar, List, Tuple
@@ -17,21 +14,16 @@ import pygame
 
 class Champion:
     def __init__(self):
-        self.size = 300
-        self.x = 50
+        pass
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                print("Key pressed")
+        pass
 
     def update(self) -> None:
-        self.x += 1
-        if self.x > self.size:
-            self.x = 0
+        pass
 
     def draw(self, surface: pygame.Surface) -> None:
-        pygame.draw.circle(surface, (200, 150, 0), (self.x, 150), 30)
+        pass
 
 
 
