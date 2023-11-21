@@ -5,6 +5,9 @@ as well as a smaller version (50x50) so you can make sure it looks good at both 
 
 Although it might take a little getting used to, this class-based system will allow easier 
 integration into a larger code-base.
+
+1. Create a champion that is just a circle moving on the surface.
+2. 
 """
 
 from typing import ClassVar, List, Tuple
@@ -12,7 +15,7 @@ from typing import ClassVar, List, Tuple
 import pygame
 
 
-class MyChampion:
+class Champion:
     def __init__(self):
         self.size = 300
         self.x = 50
@@ -28,7 +31,6 @@ class MyChampion:
             self.x = 0
 
     def draw(self, surface: pygame.Surface) -> None:
-        # champ_img.fill((200, 0, 0))
         pygame.draw.circle(surface, (200, 150, 0), (self.x, 150), 30)
 
 
@@ -48,7 +50,7 @@ class BaseView:
     SMALL_FACTOR = 1/6
 
     def __init__(self) -> None:
-        self.champion = MyChampion()
+        self.champion = Champion()
         self.champion_offset: Tuple[int, int] = None
 
     def event_loop(self, events: List[pygame.event.Event]) -> None:
