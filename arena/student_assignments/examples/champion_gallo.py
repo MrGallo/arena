@@ -14,17 +14,26 @@ import pygame
 
 class Champion:
     def __init__(self):
-        pass
+        # Initialize variables here
+        # ones named self. can be accessed from
+        # all the object's methods (functions).
+        self.size = 300
+        self.circle_x = 0
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
-        pass
+        # You can have custom events trigger here
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                print("You pressed a key!")
 
     def update(self) -> None:
-        pass
+        self.circle_x += 1
 
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
-        pass
+        # the background will be transparent.
+        pygame.draw.circle(surface, (200, 200, 0), (self.circle_x, self.size//2), 50)
+
 
 
 
