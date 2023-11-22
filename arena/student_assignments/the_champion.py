@@ -23,6 +23,7 @@ class Champion:
         pass
 
     def draw(self, surface: pygame.Surface) -> None:
+        # The surface to draw on will be 300x300 pixels in size.
         pass
 
 
