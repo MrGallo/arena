@@ -14,7 +14,7 @@ except IndexError:
 
 
 view = None
-if requested_view == "championshowcase":
+if requested_view == "showcase":
     game = MyGame(ChampionShowcase, champions=[])
 else:
     game = MyGame()
