@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Self, ClassVar
+from typing import Optional, Self, ClassVar, Callable, Dict, Any, List
 
 import pygame
 
-from arena.base_view import BaseView
+from arena.base_view import BaseView, GameEntity
 
 
 class BaseGame(ABC):
     game: ClassVar['BaseGame']
 
-    def __init__(self) -> None:
+    def __init__(self, ViewClass: Optional[type[GameEntity]] = None, *args: Any, **kwargs: Any) -> None:
         BaseGame.game = self
 
         pygame.init()
@@ -23,9 +23,9 @@ class BaseGame(ABC):
         self.screen = pygame.display.set_mode(self.SIZE)
         # self.screen = pygame.display.set_mode(self.SIZE, pygame.FULLSCREEN)
         self.clock = pygame.time.Clock()
-        self.current_view: BaseView
+        self.current_view: GameEntity
 
-        self.create()
+        self.create(ViewClass, *args, **kwargs)
 
     @staticmethod
     def instance() -> 'BaseGame':
@@ -34,11 +34,11 @@ class BaseGame(ABC):
         return BaseGame.game
 
     @classmethod
-    def set_current_view(cls, view: BaseView) -> None:
+    def set_current_view(cls, view: GameEntity) -> None:
         BaseGame.instance().current_view = view
 
     @abstractmethod
-    def create(self) -> None:
+    def create(self, ViewClass: Optional[type[GameEntity]], *args: Any, **kwargs: Any) -> None:
         pass
 
     def run(self) -> None:
@@ -55,7 +55,7 @@ class BaseGame(ABC):
                     # TODO: weird bug that keydown escape is triggered randomly in the game loop
                     if event.key == pygame.K_ESCAPE:
                         running = False
-                        
+
             self.current_view.event_loop(events)
             self.current_view.update()
             self.current_view.draw(self.screen)

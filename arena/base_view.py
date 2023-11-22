@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Protocol
 from abc import ABC, abstractmethod
 
 import pygame
@@ -16,3 +16,14 @@ class BaseView(ABC):
     @abstractmethod
     def draw(self, surface: pygame.Surface) -> None:
         pass
+
+
+class GameEntity(Protocol):
+    def event_loop(self, events: List[pygame.event.Event]) -> None:
+        ...
+    
+    def update(self) -> None:
+        ...
+    
+    def draw(self, surface: pygame.Surface) -> None:
+        ...

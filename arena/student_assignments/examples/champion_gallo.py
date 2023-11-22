@@ -3,7 +3,7 @@ CHAMPION WORKSHOP
 Use this program to create your champion. It will show a large version of your Champion (300x300)
 as well as a smaller version (50x50) so you can make sure it looks good at both sizes.
 
-Although it might take a little getting used to, this class-based system will allow easier 
+Although it might take a little getting used to, this class-based system will allow easier
 integration into a larger code-base.
 """
 
@@ -13,7 +13,7 @@ import pygame
 
 
 class Champion:
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize variables here
         # ones named self. can be accessed from
         # all the object's methods (functions).
@@ -32,28 +32,18 @@ class Champion:
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
         # the background will be transparent.
-        pygame.draw.circle(surface, (200, 200, 0), (self.circle_x, self.size//2), 50)
-
-
-
-
-
-
-
-
-
-
+        pygame.draw.circle(surface, (200, 200, 0), (self.circle_x, self.size // 2), 50)
 
 
 # _____ DO NOT TOUCH CODE BELOW HERE _________
 
 class BaseView:
     CHAMP_SIZE = 300
-    SMALL_FACTOR = 1/6
+    SMALL_FACTOR = 1 / 6
 
     def __init__(self) -> None:
         self.champion = Champion()
-        self.champion_offset: Tuple[int, int] = None
+        self.champion_offset: Tuple[int, int] = (0, 0)
 
     def event_loop(self, events: List[pygame.event.Event]) -> None:
         self.champion.handle_events(events)
@@ -62,7 +52,7 @@ class BaseView:
                 if self.champion_offset is not None:
                     offset_x, offset_y = self.champion_offset
                     mx, my = event.pos
-                    rel_x, rel_y = mx-offset_x, my-offset_y
+                    rel_x, rel_y = mx - offset_x, my - offset_y
                     if rel_x > 0 and rel_x < self.CHAMP_SIZE and rel_y > 0 and rel_y < self.CHAMP_SIZE:
                         print(f"({rel_x}, {rel_y})")
                     else:
@@ -79,11 +69,11 @@ class BaseView:
         champ_small = pygame.transform.scale_by(champ_img, self.SMALL_FACTOR)
 
         # Draw Cell
-        cell = pygame.Surface((self.CHAMP_SIZE + 50 + self.CHAMP_SIZE*self.SMALL_FACTOR + 1, self.CHAMP_SIZE + 2), pygame.SRCALPHA)
+        cell = pygame.Surface((self.CHAMP_SIZE + 50 + self.CHAMP_SIZE * self.SMALL_FACTOR + 1, self.CHAMP_SIZE + 2), pygame.SRCALPHA)
 
         cell.blit(champ_img, (1, 1))
         champ_small_rect = champ_small.get_rect()
-        champ_small_rect.move_ip(self.CHAMP_SIZE + 50, self.CHAMP_SIZE//2 - self.CHAMP_SIZE//2*self.SMALL_FACTOR)
+        champ_small_rect.move_ip(self.CHAMP_SIZE + 50, self.CHAMP_SIZE // 2 - self.CHAMP_SIZE // 2 * self.SMALL_FACTOR)
         cell.blit(champ_small, champ_small_rect.topleft)
 
         # border
@@ -93,7 +83,7 @@ class BaseView:
         # Draw cell on surface
         surface.fill((230, 230, 230))
         cell_rect = cell.get_rect()
-        cell_rect.move_ip(surface.get_width()//2 - cell.get_width() // 2, surface.get_height() // 2 - cell.get_height() // 2)
+        cell_rect.move_ip(surface.get_width() // 2 - cell.get_width() // 2, surface.get_height() // 2 - cell.get_height() // 2)
         self.champion_offset = cell_rect.topleft
         pygame.draw.rect(surface, (210, 210, 210), cell_rect.inflate(40, 40))
         surface.blit(cell, cell_rect.topleft)
