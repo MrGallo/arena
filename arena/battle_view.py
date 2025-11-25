@@ -9,10 +9,10 @@ class BattleView(BaseView):
     def __init__(self) -> None:
         self.cellsize = 50
         self.wall_thickness = 4
-        grid_width = (1920 * 2) // self.cellsize
-        grid_height = (1080 * 2) // self.cellsize
-        self.width = grid_width * self.cellsize + self.wall_thickness * 2
-        self.height = grid_height * self.cellsize + self.wall_thickness * 2
+        self.grid_width = (1920 * 2) // self.cellsize
+        self.grid_height = (1080 * 2) // self.cellsize
+        self.width = self.grid_width * self.cellsize + self.wall_thickness * 2
+        self.height = self.grid_height * self.cellsize + self.wall_thickness * 2
         self.size = self.width, self.height
         # self.score_font = pygame.font.SysFont("Arial", 30)
         self.arena_layers = [
@@ -37,6 +37,13 @@ class BattleView(BaseView):
         # border wall
         pygame.draw.rect(bg, (30, 30, 30), (0, 0, width, height), self.wall_thickness)
 
+    def _grid_pos_to_img_pos(self, grid_pos) -> tuple[int, int]:
+        x, y = grid_pos
+        return (
+            x * self.cellsize + self.wall_thickness + 1,
+            y * self.cellsize + self.wall_thickness + 1 
+        )
+
     def event_loop(self, events: List[pygame.event.Event]) -> None:
         for event in events:
             if event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
@@ -46,7 +53,6 @@ class BattleView(BaseView):
             elif event.type == pygame.MOUSEWHEEL:
                 self.scale += event.y
                 self.scale = min(10, max(self.scale, 5))
-                print(self.scale)
 
     def update(self) -> None:
         pass
@@ -60,9 +66,30 @@ class BattleView(BaseView):
 
 
 class ChampionShowcase(BattleView):
-    def __init__(self, champions: List[GameEntity]) -> None:
+    def __init__(self, champion_classes: List[GameEntity]) -> None:
         super().__init__()
+        self.champions = [champ_class() for champ_class in champion_classes]
+
+    def update(self) -> None:
+        super().update()
+        for champ in self.champions:
+            champ.update()
     
     def draw(self, surface: pygame.Surface) -> None:
-        pygame.draw.circle(self.arena_layers[1], (0, 0, 0), (self.width // 2, self.height // 2), 50)
+
+        champion_images = []
+        for champ in self.champions:
+            champ_img = pygame.Surface((300, 300), pygame.SRCALPHA)
+            champ.draw(champ_img)
+            scaled = pygame.transform.scale(champ_img, (self.cellsize, self.cellsize))
+            champion_images.append(scaled)
+        
+
+        for img in champion_images:
+            grid_pos = (self.grid_width//2, self.grid_height//2)
+            img_pos = self._grid_pos_to_img_pos(grid_pos)
+
+            self.arena_layers[1].blit(img, img_pos)
+
+
         super().draw(surface)

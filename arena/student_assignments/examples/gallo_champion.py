@@ -32,6 +32,7 @@ class Champion:
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
         # the background will be transparent.
+        surface.fill("#ffffff")
         pygame.draw.circle(surface, (200, 200, 0), (self.circle_x, self.size // 2), 50)
 
 
