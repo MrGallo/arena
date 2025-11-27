@@ -19,6 +19,7 @@ class Champion:
         # all the object's methods (functions).
         self.size = 300
         self.circle_x = 0
+        self.phase = 1
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
         # You can have custom events trigger here
@@ -28,6 +29,9 @@ class Champion:
 
     def update(self) -> None:
         self.circle_x += 1
+
+    def battle_plan(self, battle):
+        battle.move(displacement=(3, 3))
 
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
