@@ -5,7 +5,7 @@ import importlib
 
 
 from arena.my_game import MyGame
-from arena.battle_view import ChampionShowcase
+from arena.battle_view import ChampionShowcase, TestBattle_ReachGoal
 
 
 def main():
@@ -20,16 +20,18 @@ def main():
         print(f"Invalid champion directory: {champion_dir}")
         sys.exit(1)
 
-    print(f"View: {view_name}")
-    print(f"Champion directory: {champion_dir}")
+    # print(f"View: {view_name}")
+    # print(f"Champion directory: {champion_dir}")
 
     champion_classes = load_champion_classes(champion_dir)
     
     if view_name == "showcase":
         game = MyGame(ChampionShowcase, champion_classes=champion_classes)
+    elif view_name == "test_reach_goal":
+        game = MyGame(TestBattle_ReachGoal, champion_classes=champion_classes)
     else:
-        game = MyGame()
-
+        print(f"Invalid view name '{view_name}'")
+        sys.exit(1)
     game.run()
 
 

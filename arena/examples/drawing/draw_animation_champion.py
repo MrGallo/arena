@@ -14,32 +14,26 @@ import pygame
 
 class Champion:
     def __init__(self) -> None:
-        # Initialize variables here
-        # ones named self. can be accessed from
-        # all the object's methods (functions).
-        pass
-        # self.size = 300
-        # self.circle_x = 0
-        # self.phase = 1
+        # initialize animated variables here, reference them with
+        # self. so they are accessible in all the methods
+        self.radius = 100
+        self.size_speed = 2
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
-        # You can have custom events trigger here
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                print("You pressed a key!")
+        pass
 
     def update(self) -> None:
-        pass
-        # self.circle_x += 1
-
-    def battle_plan(self, battle):
-        battle.move(displacement=(3, 3))
+        self.radius += self.size_speed
+        if self.radius > 150 or self.radius < 100:
+            self.size_speed *= -1
 
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
-        # the background will be transparent.
-        size = surface.get_width()
-        pygame.draw.circle(surface, (200, 200, 0), (size//2, size//2), size//2)
+        surf_width = surface.get_width()
+        pygame.draw.circle(surface, "#ffffff", (surf_width//2, surf_width//2), self.radius)
+
+    def battle_plan(self, battle):
+        pass
 
 
 # _____ DO NOT TOUCH CODE BELOW HERE _________
@@ -49,7 +43,7 @@ class BaseView:
     SMALL_FACTOR = 1 / 6
 
     def __init__(self) -> None:
-        self.champion = Champion()
+        self.champion: Champion = Champion()
         self.champion_offset: Tuple[int, int] = (0, 0)
 
     def event_loop(self, events: List[pygame.event.Event]) -> None:

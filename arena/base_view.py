@@ -19,11 +19,14 @@ class BaseView(ABC):
 
 
 class GameEntity(Protocol):
-    def event_loop(self, events: List[pygame.event.Event]) -> None:
+    def handle_events(self, events: List[pygame.event.Event]) -> None:
         ...
     
     def update(self) -> None:
         ...
     
     def draw(self, surface: pygame.Surface) -> None:
+        ...
+
+    def battle_plan(self, battle) -> None:
         ...

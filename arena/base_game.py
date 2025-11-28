@@ -20,8 +20,8 @@ class BaseGame(ABC):
         self.SIZE = (self.WIDTH, self.HEIGHT)
         self.fullscreen = True
 
-        self.screen = pygame.display.set_mode(self.SIZE)
-        # self.screen = pygame.display.set_mode(self.SIZE, pygame.FULLSCREEN)
+        # self.screen = pygame.display.set_mode(self.SIZE)
+        self.screen = pygame.display.set_mode(self.SIZE, pygame.FULLSCREEN)
         self.clock = pygame.time.Clock()
         self.current_view: GameEntity
 
