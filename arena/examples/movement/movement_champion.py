@@ -11,6 +11,8 @@ from typing import ClassVar, List, Tuple
 
 import pygame
 
+from arena.battle_api import BattleAPI
+
 
 class Champion:
     def __init__(self) -> None:
@@ -27,10 +29,8 @@ class Champion:
         surface.fill("#6173c3")
         pygame.draw.rect(surface, "#000000", (0, 0, surface.get_width(), surface.get_height()), 15)
 
-    def battle_plan(self, battle):
-        pass
-
-# _____ DO NOT TOUCH CODE BELOW HERE _________
+    def battle_plan(self, battle: BattleAPI):
+        battle.move((-10, 0))
 
 class BaseView:
     CHAMP_SIZE = 300

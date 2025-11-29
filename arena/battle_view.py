@@ -5,9 +5,11 @@ import math
 import pygame
 
 from arena.base_view import BaseView, GameEntity
-from arena.action_system import ActionSystem
 from arena.battle_api import BattleAPI
 from arena.sprite import Sprite
+from arena.mission import Mission, WithinRangeObjective
+from arena.action import Action
+from arena.settings import Settings
 
 
 class BattleView(BaseView):
@@ -28,10 +30,11 @@ class BattleView(BaseView):
 
         self.boundary_rect = pygame.Rect(0, 0, *self.size)
         # self.score_font = pygame.font.SysFont("Arial", 30)
-        self.arena_layers = [
+        self.scalable_surfaces = [
             pygame.surface.Surface(self.size),                      # Ground and grid
             pygame.surface.Surface(self.size, pygame.SRCALPHA),     # movable object layer
         ]
+        self.overlay_surface = pygame.Surface((1920, 1080), pygame.SRCALPHA)
         self._draw_arena_bg()
         self.camera_x = 0
         self.camera_y = 0
@@ -44,10 +47,11 @@ class BattleView(BaseView):
             champ_sprite.add(self.champ_sprite_group)
             self.champ_sprite_map[champ] = champ_sprite
         
-        self.goal_sprites = pygame.sprite.Group()
+        self.mission = Mission(self)
+
     
     def _draw_arena_bg(self) -> None:
-        bg = self.arena_layers[self.GROUND_LAYER]
+        bg = self.scalable_surfaces[self.GROUND_LAYER]
         bg.fill("#a48c76")
         width, height = bg.get_size()
         for x in range(self.wall_thickness, width, self.cellsize):
@@ -83,6 +87,7 @@ class BattleView(BaseView):
             sprite.champ.battle_plan(battle_api)
             self.actions += battle_api._drain()
         self._process_actions()
+        self.mission.update()
 
     def _process_actions(self):
         while (self.actions):
@@ -102,10 +107,12 @@ class BattleView(BaseView):
         surface.fill((255, 255, 255))
 
         # clear movable objects layer
-        self.arena_layers[self.MOVABLE_OBJECT_LAYER].fill((0, 0, 0, 0))
+        self.scalable_surfaces[self.MOVABLE_OBJECT_LAYER].fill((0, 0, 0, 0))
 
         # draw champs
-        self.champ_sprite_group.draw(self.arena_layers[self.MOVABLE_OBJECT_LAYER])
+        self.champ_sprite_group.draw(self.scalable_surfaces[self.MOVABLE_OBJECT_LAYER])
+
+        self.mission.draw(self.scalable_surfaces[self.MOVABLE_OBJECT_LAYER])
 
         # for champ_sprite in self.champ_sprite_map.values():
         #     champ_surf = pygame.Surface((300, 300), pygame.SRCALPHA)
@@ -113,11 +120,32 @@ class BattleView(BaseView):
         #     scaled = pygame.transform.scale(champ_surf, (self.cellsize, self.cellsize))
         #     self.arena_layers[self.MOVABLE_OBJECT_LAYER].blit(scaled, champ_sprite.position)
 
-        for layer in self.arena_layers:
+        for layer in self.scalable_surfaces:
             scaled = pygame.transform.scale_by(layer, self.scale / 10)
             width, height = surface.get_size()
             surface.blit(scaled, (-scaled.get_width() // 2 + width // 2 - self.camera_x, -scaled.get_height() // 2 + height // 2 - self.camera_y))
-        
+
+        # HUD
+        # Heading
+        self.overlay_surface.fill((0, 0, 0, 0))
+        heading_text = Settings.Font.heading.render(
+            f"{self.mission.display_string} [{self.mission.status.capitalize()}]",
+            True,
+            Settings.Color.text_heading
+        )
+        self.overlay_surface.blit(heading_text, (0, 0)) 
+
+        # Objectives
+        heading_height = heading_text.get_height()
+        text_height = Settings.Font.body.size("|")[1]
+        for i, obj in enumerate(self.mission.objectives):
+            y = i * (text_height + 5) + heading_height + 5 
+            obj_text = Settings.Font.body.render(f"{obj.display_string} [{obj.status}]",
+                                                 True,
+                                                 Settings.Color.text_body)
+            self.overlay_surface.blit(obj_text, (0, y))
+
+        surface.blit(self.overlay_surface, (0, 0))
 
 
 class ChampionShowcase(BattleView):
@@ -138,10 +166,22 @@ class ChampionShowcase(BattleView):
             spawn_points.append((x, y))
 
         super().__init__(champion_classes, spawn_points)
-        
+
 
 
 class TestBattle_ReachGoal(BattleView):
     def __init__(self, champion_classes: List[GameEntity]):
-        spawn_points = ((self.width * 0.65, self.height // 2),)
+        spawn_points = ((self.width * 0.65, self.height // 2 - self.cellsize // 2),)
         super().__init__(champion_classes, spawn_points)
+        self.mission.add_objective(
+            WithinRangeObjective(
+                self,
+                self.champ_sprite_group.sprites()[0],
+                (self.width // 3, self.height // 2),
+                100
+            )
+        ) 
+    
+    def update(self):
+        super().update()
+        print(self.mission.status)
