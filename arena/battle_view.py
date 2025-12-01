@@ -15,6 +15,7 @@ from arena.mission import (
 from arena.action import Action
 from arena.settings import Settings
 from arena.base_game import BaseGame
+from arena.mission import Objective
 
 
 class BattleView(BaseView):
@@ -178,11 +179,17 @@ class BattleView(BaseView):
 
         # HUD
         # Heading
+        objective_color_map = {
+            Objective.INCOMPLETE: Settings.Color.text_body,
+            Objective.SUCCESS: Settings.Color.text_success,
+            Objective.FAILURE: Settings.Color.text_danger,
+        }
         self.overlay_surface.fill((0, 0, 0, 0))
+        color = objective_color_map[self.mission.status]
         heading_text = Settings.Font.heading.render(
             f"{self.mission.display_string} [{self.mission.status.capitalize()}]",
             True,
-            Settings.Color.text_heading
+            color
         )
         self.overlay_surface.blit(heading_text, (0, 0)) 
 
@@ -190,10 +197,11 @@ class BattleView(BaseView):
         heading_height = heading_text.get_height()
         text_height = Settings.Font.body.size("|")[1]
         for i, obj in enumerate(self.mission.objectives):
+            color = objective_color_map[obj.status]
             y = i * (text_height + 5) + heading_height + 5 
             obj_text = Settings.Font.body.render(f"{obj.display_string} [{obj.status.capitalize()}]",
                                                  True,
-                                                 Settings.Color.text_body)
+                                                 color)
             self.overlay_surface.blit(obj_text, (0, y))
 
         if self.state == BattleView.State.WAIT:
