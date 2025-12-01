@@ -49,7 +49,7 @@ class BattleView(BaseView):
         self._draw_arena_bg()
         self.camera_x = 0
         self.camera_y = 0
-        self.scale = 10
+        self.scale = 1.0
         self.actions = deque() 
 
         self.champ_sprite_group = pygame.sprite.Group() 
@@ -90,8 +90,8 @@ class BattleView(BaseView):
                 self.camera_y -= dy
                 print(self.camera_x, self.camera_y)
             elif event.type == pygame.MOUSEWHEEL:
-                self.scale += event.y
-                self.scale = min(10, max(self.scale, 4))
+                self.scale += event.y / 10
+                self.scale = min(1, max(self.scale, 0.4))
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pass
                 # screen_center = BaseGame.instance().screen.get_rect().center
@@ -172,7 +172,7 @@ class BattleView(BaseView):
         #     self.arena_layers[self.MOVABLE_OBJECT_LAYER].blit(scaled, champ_sprite.position)
 
         for layer in self.scalable_surfaces:
-            scaled = pygame.transform.scale_by(layer, self.scale / 10)
+            scaled = pygame.transform.scale_by(layer, self.scale)
             width, height = surface.get_size()
             surface.blit(scaled, (-scaled.get_width() // 2 + width // 2 - self.camera_x, -scaled.get_height() // 2 + height // 2 - self.camera_y))
 
