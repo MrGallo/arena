@@ -5,7 +5,21 @@ import importlib
 
 
 from arena.my_game import MyGame
-from arena.battle_view import ChampionShowcase, TestBattle_ReachGoal
+from arena.battle_view import (
+    ChampionShowcase,
+    TrainingMoveWithinRangeOfPoint,
+    TrainingMoveWithRangeAndStop,
+    TrainingReachTwoLocationsAndStop,
+)
+
+
+VIEW_MAP = {
+    "main_menu": None,
+    "showcase": ChampionShowcase,
+    "training_movement_01": TrainingMoveWithinRangeOfPoint,
+    "training_movement_02": TrainingMoveWithRangeAndStop,
+    "training_movement_03": TrainingReachTwoLocationsAndStop,
+}
 
 
 def main():
@@ -24,12 +38,9 @@ def main():
     # print(f"Champion directory: {champion_dir}")
 
     champion_classes = load_champion_classes(champion_dir)
-    
-    if view_name == "showcase":
-        game = MyGame(ChampionShowcase, champion_classes=champion_classes)
-    elif view_name == "test_reach_goal":
-        game = MyGame(TestBattle_ReachGoal, champion_classes=champion_classes)
-    else:
+    try:
+        game = MyGame(VIEW_MAP[view_name], champion_classes=champion_classes) 
+    except KeyError:
         print(f"Invalid view name '{view_name}'")
         sys.exit(1)
     game.run()

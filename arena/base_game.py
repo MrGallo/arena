@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Self, ClassVar, Callable, Dict, Any, List
+from typing import Optional, ClassVar, Callable, Dict, Any, List
 
 import pygame
 

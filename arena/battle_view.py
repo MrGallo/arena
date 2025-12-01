@@ -7,12 +7,23 @@ import pygame
 from arena.base_view import BaseView, GameEntity
 from arena.battle_api import BattleAPI
 from arena.sprite import Sprite
-from arena.mission import Mission, WithinRangeObjective
+from arena.mission import (
+    Mission,
+    WithinRangeObjective,
+    StopWithinRangeObjective,
+)
 from arena.action import Action
 from arena.settings import Settings
+from arena.base_game import BaseGame
 
 
 class BattleView(BaseView):
+    class State:
+        WAIT = "wait"
+        BATTLE = "battle"
+        PAUSE = "pause"
+        END = "end"
+
     GROUND_LAYER = 0
     MOVABLE_OBJECT_LAYER = 1
 
@@ -48,6 +59,7 @@ class BattleView(BaseView):
             self.champ_sprite_map[champ] = champ_sprite
         
         self.mission = Mission(self)
+        self.state = BattleView.State.WAIT 
 
     
     def _draw_arena_bg(self) -> None:
@@ -76,18 +88,54 @@ class BattleView(BaseView):
                 dx, dy = event.rel
                 self.camera_x -= dx
                 self.camera_y -= dy
+                print(self.camera_x, self.camera_y)
             elif event.type == pygame.MOUSEWHEEL:
                 self.scale += event.y
-                self.scale = min(10, max(self.scale, 5))
+                self.scale = min(10, max(self.scale, 4))
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pass
+                # screen_center = BaseGame.instance().screen.get_rect().center
+                # arena_center = self.width // 2, self.height // 2
+                # camera_displacement = self.camera_x, self.camera_y
+                # print(f"{screen_center=}, {arena_center=}, {camera_displacement=}, {self.scale=}")
+            elif event.type == pygame.KEYDOWN:
+                if self.state == BattleView.State.WAIT:
+                    if event.key == pygame.K_SPACE:
+                        self.state = BattleView.State.BATTLE
 
     def update(self) -> None:
+        if self.state == BattleView.State.BATTLE:
+            self._update_battle()
+
+    def _update_battle(self) -> None:
         for sprite in self.champ_sprite_group:
-            sprite.champ.update()
+            # update sprite animations
+            sprite.champ.update() 
+            
+            # get champ battle plan
             battle_api = BattleAPI(sprite.champ, self)
             sprite.champ.battle_plan(battle_api)
             self.actions += battle_api._drain()
+
+            # decay velocity due to friction (incase they stop moving)
+            sprite.velocity *= 0.7
+            if sprite.velocity.magnitude_squared() < 0.01:
+                sprite.velocity *= 0
+
         self._process_actions()
+
+        # apply movement based on any changes
+        for sprite in self.champ_sprite_group:
+            moved_rect = sprite.rect.move(*sprite.velocity) 
+            if self.boundary_rect.contains(moved_rect):
+                sprite.rect.move_ip(*sprite.velocity)
+            else:
+                pass  # Send boundary event, stuck event?  
+
         self.mission.update()
+
+        if self.mission.status == Mission.SUCCESS:
+            self.state = BattleView.State.END
 
     def _process_actions(self):
         while (self.actions):
@@ -96,12 +144,15 @@ class BattleView(BaseView):
 
             getattr(self, action_name)(champ_sprite, *args)
     
-    def move(self, champ_sprite, displacement):
-        moved_rect = champ_sprite.rect.move(*displacement) 
-        if self.boundary_rect.contains(moved_rect):
-            champ_sprite.rect.move_ip(*displacement)
-        else:
-            pass  # Send boundary event, stuck event?  
+    def move(self, champ_sprite: Sprite, angle, impulse=1.0, max_speed=None):
+        BASE_ACCEL = 5  # TODO: Should be calculated based on F = ma
+        acceleration = pygame.Vector2((1, 0))
+        acceleration.rotate_ip(angle)
+        acceleration *= BASE_ACCEL * impulse
+        champ_sprite.velocity = acceleration
+
+
+    # def move(self, champ_sprite, displacement):
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill((255, 255, 255))
@@ -140,11 +191,34 @@ class BattleView(BaseView):
         text_height = Settings.Font.body.size("|")[1]
         for i, obj in enumerate(self.mission.objectives):
             y = i * (text_height + 5) + heading_height + 5 
-            obj_text = Settings.Font.body.render(f"{obj.display_string} [{obj.status}]",
+            obj_text = Settings.Font.body.render(f"{obj.display_string} [{obj.status.capitalize()}]",
                                                  True,
                                                  Settings.Color.text_body)
             self.overlay_surface.blit(obj_text, (0, y))
 
+        if self.state == BattleView.State.WAIT:
+            self.overlay_surface.fill((255, 255, 255, 50))
+            wait_heading_text = Settings.Font.jumbo.render("READY?",
+                                                           True,
+                                                           Settings.Color.text_heading)
+            instructions_text = Settings.Font.heading.render("Press SPACE to begin.",
+                                                      True,
+                                                      Settings.Color.text_subheading)
+            text_rect = wait_heading_text.get_rect()
+            text_rect.center = self.overlay_surface.get_rect().center
+            self.overlay_surface.blit(wait_heading_text, text_rect.topleft)
+
+            text_rect = instructions_text.get_rect()
+            text_rect.center = self.overlay_surface.get_rect().center
+            text_rect.move_ip(0, wait_heading_text.get_height() + 20)
+            self.overlay_surface.blit(instructions_text, text_rect.topleft)
+        elif self.state == BattleView.State.END:
+            result_text = Settings.Font.jumbo.render(self.mission.status.upper(), True, Settings.Color.text_heading)
+            text_rect = result_text.get_rect()
+            text_rect.center = self.overlay_surface.get_rect().center
+            self.overlay_surface.blit(result_text, text_rect.topleft)
+
+        # finally blit overlay surface to the screen
         surface.blit(self.overlay_surface, (0, 0))
 
 
@@ -169,19 +243,77 @@ class ChampionShowcase(BattleView):
 
 
 
-class TestBattle_ReachGoal(BattleView):
+class TrainingMoveWithinRangeOfPoint(BattleView):
+    """Champions will use the battle.move() method to move to a point"""
     def __init__(self, champion_classes: List[GameEntity]):
         spawn_points = ((self.width * 0.65, self.height // 2 - self.cellsize // 2),)
         super().__init__(champion_classes, spawn_points)
+        self.mission.display_string = "Reach the goal"
         self.mission.add_objective(
             WithinRangeObjective(
                 self,
                 self.champ_sprite_group.sprites()[0],
-                (self.width // 3, self.height // 2),
+                (self.width // 2.5, self.height // 2),
                 100
             )
         ) 
     
     def update(self):
         super().update()
-        print(self.mission.status)
+
+
+class TrainingMoveWithRangeAndStop(BattleView):
+    """Champions will use the battle.move() method to move to a point
+    Then stop after a certain number of frames.
+    Better approaches will make use of the Champion's battle.sense()
+    to know exactly where they are in the arena.
+    """
+    def __init__(self, champion_classes: List[GameEntity]):
+        spawn_points = ((self.width * 0.65, self.height // 2 - self.cellsize // 2),)
+        super().__init__(champion_classes, spawn_points)
+        self.mission.display_string = "Reach the goal"
+        self.mission.add_objective(
+            StopWithinRangeObjective(
+                self,
+                self.champ_sprite_group.sprites()[0],
+                (self.width // 2.5, self.height // 2),
+                100
+            )
+        ) 
+    
+    def update(self):
+        super().update()
+
+
+class TrainingReachTwoLocationsAndStop(BattleView):
+    """Champions will use the battle.move() method to move to a point
+    then move to another point and stop at that point.
+    Again, a crude approach is to simply time your process with frames.
+    Better approaches will make use of the Champion's battle.sense()
+    to know exactly where they are in the arena.
+    """
+    def __init__(self, champion_classes: List[GameEntity]):
+        spawn_points = ((self.width * 0.65, self.height // 2 - self.cellsize // 2),)
+        super().__init__(champion_classes, spawn_points)
+        self.mission.display_string = "Reach both points and stop"
+        self.mission.add_objectives([
+            WithinRangeObjective(
+                self,
+                self.champ_sprite_group.sprites()[0],
+                (self.width * 0.5, self.height * 0.65),
+                100
+            ),
+            StopWithinRangeObjective(
+                self,
+                self.champ_sprite_group.sprites()[0],
+                (self.width * 0.40, self.height * 0.45),
+                100
+            )
+        ]) 
+    
+    def update(self):
+        super().update()
+
+# TODO: Next movement tutorial move_to ? doesn't that require battle.sense()?
+# what about moving toward an object and getting a STUCK event
+# move has optional params, need to tutorial those

@@ -30,7 +30,7 @@ class Champion:
         pygame.draw.rect(surface, "#000000", (0, 0, surface.get_width(), surface.get_height()), 15)
 
     def battle_plan(self, battle: BattleAPI):
-        battle.move((-10, 0))
+        battle.move(angle=180)
 
 class BaseView:
     CHAMP_SIZE = 300

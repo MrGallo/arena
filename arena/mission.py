@@ -48,6 +48,10 @@ class Mission(Objective):
     def add_objective(self, objective):
         self.objectives.append(objective)
 
+    def add_objectives(self, objectives):
+        for obj in objectives:
+            self.objectives.append(obj)
+
     def update(self):
         for obj in self.objectives:
             obj.update()
@@ -73,8 +77,11 @@ class WithinRangeObjective(Objective):
                  arena,
                  champion: Sprite,
                  location: tuple[int, int],
-                 radius):
-        super().__init__(arena, f"Get within {radius} pixels of {location}")
+                 radius,
+                 display_string=None):
+        if display_string is None:
+            display_string = f"Get within {radius} pixels of {location}"
+        super().__init__(arena, display_string)
         self.champion = champion
         self.location = pygame.Vector2(*location)
         self.radius = radius
@@ -98,3 +105,19 @@ class WithinRangeObjective(Objective):
 
         blit_pos = (self.location.x - self.radius, self.location.y - self.radius)
         surface.blit(fade_surf, blit_pos)
+
+
+class StopWithinRangeObjective(WithinRangeObjective):
+    def __init__(self,
+                 arena,
+                 champion: Sprite,
+                 location: tuple[int, int],
+                 radius):
+        super().__init__(arena, champion, location, radius, f"Stop within {radius} pixels of {location}")
+    
+    def success(self) -> bool:
+        champ_pos = pygame.Vector2(self.champion.rect.center)
+        diff: pygame.Vector2 = champ_pos - self.location
+        is_stopped = self.champion.velocity.magnitude_squared() == 0
+        return diff.magnitude_squared() < self.radius ** 2 and is_stopped
+    
