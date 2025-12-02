@@ -109,29 +109,33 @@ class BattleView(BaseView):
             self._update_battle()
 
     def _update_battle(self) -> None:
+
         for sprite in self.champ_sprite_group:
             # update sprite animations
             sprite.champ.update() 
-            
+
             # get champ battle plan
             battle_api = BattleAPI(sprite.champ, self)
             sprite.champ.battle_plan(battle_api)
             self.actions += battle_api._drain()
 
-            # decay velocity due to friction (incase they stop moving)
-            sprite.velocity *= 0.7
-            if sprite.velocity.magnitude_squared() < 0.01:
-                sprite.velocity *= 0
-
         self._process_actions()
-
+            
         # apply movement based on any changes
         for sprite in self.champ_sprite_group:
+            
+            print(f"{sprite.velocity.magnitude()=}")
+
             moved_rect = sprite.rect.move(*sprite.velocity) 
             if self.boundary_rect.contains(moved_rect):
-                sprite.rect.move_ip(*sprite.velocity)
+                sprite.position += sprite.velocity
             else:
                 pass  # Send boundary event, stuck event?  
+
+            # decay velocity due to friction (incase they stop moving)
+            sprite.velocity *= 0.9
+            if sprite.velocity.magnitude_squared() < 0.01:
+                sprite.velocity *= 0
 
         self.mission.update()
 
@@ -145,12 +149,24 @@ class BattleView(BaseView):
 
             getattr(self, action_name)(champ_sprite, *args)
     
-    def move(self, champ_sprite: Sprite, angle, impulse=1.0, max_speed=None):
-        BASE_ACCEL = 5  # TODO: Should be calculated based on F = ma
+    def move(self, champ_sprite: Sprite, angle, impulse, max_speed):
+        # angle = 180
+        # impulse = 1 
+        # max_speed = 10
+
+        TOP_SPEED = 10  # TODO: Can include stat bonuses
+        mass = 10  # TODO: Calculate from stats mass 
+        # mass values
+        # Assassin: mass = 8
+        # Soldier: mass = 12
+        # Tank: mass = 20
+        accel_mag = impulse * 10 / mass
         acceleration = pygame.Vector2((1, 0))
         acceleration.rotate_ip(angle)
-        acceleration *= BASE_ACCEL * impulse
-        champ_sprite.velocity = acceleration
+        acceleration *= accel_mag
+        print(f"{acceleration.magnitude()=}")
+        champ_sprite.velocity += acceleration
+        champ_sprite.velocity.clamp_magnitude_ip(0, min(TOP_SPEED, max_speed))
 
 
     # def move(self, champ_sprite, displacement):
@@ -322,6 +338,7 @@ class TrainingReachTwoLocationsAndStop(BattleView):
     def update(self):
         super().update()
 
+
+# move has optional params, need to tutorial those: impulse 0-1 and max_speed
 # TODO: Next movement tutorial move_to ? doesn't that require battle.sense()?
 # what about moving toward an object and getting a STUCK event
-# move has optional params, need to tutorial those

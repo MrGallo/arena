@@ -29,7 +29,7 @@ class Champion:
 
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
-        surface.fill("#6173c3")
+        surface.fill("#c37b61")
         pygame.draw.rect(surface, "#000000", (0, 0, surface.get_width(), surface.get_height()), 15)
 
     def battle_plan(self, battle: BattleAPI):

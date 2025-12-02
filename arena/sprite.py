@@ -8,8 +8,8 @@ class Sprite(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.champ = champion
         self.velocity = pygame.Vector2()
+        self.position = pygame.Vector2(*position)
         self.size = width, width
-        self.rect = pygame.Rect(*position, *self.size)
 
     
     def draw(self, surface):
@@ -20,6 +20,10 @@ class Sprite(pygame.sprite.Sprite):
         surf = pygame.Surface(self.IMAGE_SURFACE_SIZE, pygame.SRCALPHA)
         self.champ.draw(surf)
         return pygame.transform.scale(surf, self.size)
+
+    @property
+    def rect(self):
+        return pygame.Rect(*self.position, *self.size)
 
     def get_rect(self):
         return self.rect

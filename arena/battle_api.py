@@ -10,7 +10,7 @@ class BattleAPI:
         self._actions = []
         self._arena_state = self._generate_arena_state_string(arena)
 
-    def move(self, angle, impulse=1.0, max_speed=None):
+    def move(self, angle, impulse=0.5, max_speed=5):
         self._actions.append((Action.MOVE, self._champ, angle, impulse, max_speed))    
 
     def scan(self):
