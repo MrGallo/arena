@@ -28,5 +28,7 @@ class GameEntity(Protocol):
     def draw(self, surface: pygame.Surface) -> None:
         ...
 
+
+class Champion(GameEntity):
     def battle_plan(self, battle) -> None:
         ...

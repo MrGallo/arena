@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Type
 from collections import deque
 import math
 
 import pygame
 
-from arena.base_view import BaseView, GameEntity
+from arena.base_view import BaseView, GameEntity, Champion
 from arena.battle_api import BattleAPI
 from arena.sprite import Sprite
 from arena.mission import (
@@ -19,6 +19,16 @@ from arena.base_game import BaseGame
 from arena.mission import Objective
 from arena.team import Team
 
+"""
+All Levels will be getting a payload in the form of:
+
+payload = {
+    Team.BLUE: "team_one_name",
+    Team.RED: "team_two_name",
+    "extra": args.extra,  # could be team_name or nothing
+    "champions": list[Type[Champion]],
+}
+"""
 
 
 class BattleView(BaseView):
@@ -40,7 +50,7 @@ class BattleView(BaseView):
     height = grid_height * cellsize + wall_thickness * 2
     size = width, height
 
-    def __init__(self, groups, mission=None) -> None:
+    def __init__(self, teams_with_objectives: dict[str, tuple[Team, list[Objective]]]):
         self.champ_sprite_map = {}
         
         for group_type, (champions, spawn_points) in groups.items():
@@ -74,6 +84,7 @@ class BattleView(BaseView):
         self.state = BattleView.State.WAIT 
 
         self.sprite_missions = {}
+    
     
     def _draw_arena_bg(self) -> None:
         bg = self.scalable_surfaces[self.GROUND_LAYER]
@@ -399,3 +410,15 @@ class RaceBattle(BattleView):
 # move has optional params, need to tutorial those: impulse 0-1 and max_speed
 # TODO: Next movement tutorial move_to ? doesn't that require battle.sense()?
 # what about moving toward an object and getting a STUCK event
+
+
+
+VIEW_MAP = {
+    "main_menu": None,
+    "showcase": ChampionShowcase,
+    "training_movement_01": TrainingMoveWithinRangeOfPoint,
+    "training_movement_02": TrainingMoveWithRangeAndStop,
+    "training_movement_03": TrainingReachTwoLocationsAndStop,
+    "race_battle": RaceBattle,
+}
+ 

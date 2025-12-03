@@ -22,6 +22,17 @@ class TestChampTeamPosition2:
         position = 2
 
 
+class TestChampTeamA:
+    class Team:
+        name = "A"
+
+
+class TestChampTeamB:
+    class Team:
+        name = "B"
+
+
+
 def test_team_adds_champ():
     champ = TestChampionWithoutTeam()
     team = Team([champ], ((0, 0), ), "test team")
@@ -82,3 +93,28 @@ def test_team_adds_those_with_position_and_those_with_duplicate_positions():
 def test_team_raises_value_error_when_roster_and_positions_not_same_size():
     with pytest.raises(AssertionError):
         Team([TestChampionWithoutTeam()], ((0, 0), (1, 1)), "test_test"), "Roster size and positions must be equal"
+
+
+def test_sort_into_team_name_champ_map():
+    champion_classes = [
+        TestChampTeamA,
+        TestChampTeamA
+    ]
+    result = Team.sort_into_team_name_champ_list_map(champion_classes)
+    assert len(result["A"]) == 2
+
+
+def test_sort_into_team_name_champ_map_with_different_team_names():
+    champion_classes = [
+        TestChampTeamA,
+        TestChampTeamB
+    ]
+    result = Team.sort_into_team_name_champ_list_map(champion_classes)
+    assert len(result["A"]) == 1
+    assert len(result["B"]) == 1
+
+
+def test_sort_into_team_name_champ_map_puts_undefined_into_undefined_list():
+    result = Team.sort_into_team_name_champ_list_map([TestChampTeamPosition0])
+    assert len(result[Team.UNDEFINED]) == 1
+

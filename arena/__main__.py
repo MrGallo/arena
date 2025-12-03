@@ -1,110 +1,89 @@
-from typing import List, Optional
+import argparse
 import sys
 from pathlib import Path
 import importlib.util
 
-from arena.my_game import MyGame
-from arena.battle_view import (
-    ChampionShowcase,
-    TrainingMoveWithinRangeOfPoint,
-    TrainingMoveWithRangeAndStop,
-    TrainingReachTwoLocationsAndStop,
-    RaceBattle,
-)
+
+from arena.team import Team
 
 
-VIEW_MAP = {
-    "main_menu": None,
-    "showcase": ChampionShowcase,
-    "training_movement_01": TrainingMoveWithinRangeOfPoint,
-    "training_movement_02": TrainingMoveWithRangeAndStop,
-    "training_movement_03": TrainingReachTwoLocationsAndStop,
-    "race_battle": RaceBattle,
-}
-
-
-# ------------------------------------------------------
-# Helpers
-# ------------------------------------------------------
-
-def load_champion_class_from(py_file: Path):
-    module_name = f"_arena_dynamic_.{py_file.stem}"
-
-    spec = importlib.util.spec_from_file_location(module_name, py_file)
-    if spec is None or spec.loader is None:
-        print(f"Could not load champion file: {py_file}")
-        return None
-
+def load_champion_from_file(path: Path):
+    spec = importlib.util.spec_from_file_location(path.stem, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-
-    champ_cls = getattr(module, "Champion", None)
-
-    if champ_cls is None:
-        print(f"File '{py_file.name}' does not contain a Champion class.")
-        return None
-
-    return champ_cls
+    return module.Champion
 
 
-def load_champion_classes(path: Path):
-    champions = []
-
-    # Single-file mode
-    if path.is_file():
-        if path.name.endswith("_champion.py"):
-            cls = load_champion_class_from(path)
-            if cls:
-                champions.append(cls)
-        else:
-            print(f"File '{path}' is not a *_champion.py file.")
-        return champions
-
-    # Directory mode
-    if path.is_dir():
-        for py_file in path.glob("*_champion.py"):
-            cls = load_champion_class_from(py_file)
-            if cls:
-                champions.append(cls)
-        return champions
-
-    print(f"Invalid champion path: {path}")
-    return champions
+def load_all_champions(folder: Path):
+    champs = []
+    for file in folder.iterdir():
+        if file.is_file() and file.name.endswith("_champion.py"):
+            champs.append(load_champion_from_file(file))
+    return champs
 
 
-# ------------------------------------------------------
-# Entry Point
-# ------------------------------------------------------
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("level")
+    parser.add_argument("extra", nargs="*")
+    parser.add_argument("--blue")
+    parser.add_argument("--red")
+    parser.add_argument("--path")
+    return parser.parse_args()
+
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python -m arena <view_name> <champion_path>")
-        sys.exit(1)
+    args = parse_args()
 
-    view_name = sys.argv[1]
-    champion_path = Path(sys.argv[2]).resolve()
+    # resolve folder
+    folder = Path(args.path).resolve() if args.path else Path.cwd()
 
-    # Validate view
-    if view_name not in VIEW_MAP:
-        print(f"Invalid view name '{view_name}'. Valid options:")
-        for k in VIEW_MAP:
-            print("  -", k)
-        sys.exit(1)
+    # single champion file?
+    if len(args.extra) == 1 and Path(args.extra[0]).is_file():
+        payload = load_champion_from_file(Path(args.extra[0]))
 
-    # Validate path exists
-    if not champion_path.exists():
-        print(f"Champion path does not exist: {champion_path}")
-        sys.exit(1)
+    else:
+        all_champs = load_all_champions(folder)
+        payload = {
+            Team.BLUE: args.blue,
+            Team.RED: args.red,
+            "extra": args.extra,  # could be team_name or nothing
+            "champions": all_champs,
+        }
 
-    champion_classes = load_champion_classes(champion_path)
+    from arena.battle_view import VIEW_MAP
+    from arena.my_game import MyGame
 
-    if not champion_classes:
-        print("No valid champion classes found.")
-        sys.exit(1)
-
-    game = MyGame(VIEW_MAP[view_name], champion_classes=champion_classes)
+    level_cls = VIEW_MAP[args.level]
+    level = level_cls(payload=payload)
+    game = MyGame(level)
     game.run()
 
 
 if __name__ == "__main__":
     main()
+
+"""
+# run a SINGLE champion directly from a file
+python -m arena showcase ./champions/rogue_champion.py
+
+# team vs team (explicit folder path)
+python -m arena battle_01 --blue knights --red goblins --path ./all_champs/
+
+# team vs team (run inside folder, no --path)
+cd all_champs/
+python -m arena battle_02 --blue blue_dragons --red red_wolves
+
+# single team challenge (explicit folder path)
+python -m arena training_01 blue_dragons --path ./all_champs/
+
+# single team challenge (run inside folder)
+cd all_champs/
+python -m arena training_02 red_wolves
+
+# free-for-all style level (uses ALL champions in folder)
+python -m arena ffa_arena
+
+# multiple extra args (level-specific parameters)
+python -m arena debug_level knights speed=2 difficulty=hard
+"""

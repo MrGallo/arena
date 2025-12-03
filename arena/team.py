@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, Type
 
-from arena.base_view import GameEntity
+from arena.base_view import GameEntity, Champion
 from arena.sprite import Sprite
 from arena.settings import Settings
 
@@ -8,11 +8,13 @@ from arena.settings import Settings
 class Team:
     BLUE = "blue"
     RED = "red"
+    UNDEFINED = "undefined"
 
-    def __init__(self, roster: list[GameEntity], positions: tuple[int, int], name):
+    def __init__(self, roster: list[Champion], positions: tuple[int, int], name, color=None):
         assert len(roster) == len(positions), "The roster must have same length as positions"
 
         self.name = name
+        self.color = color or Team.UNDEFINED
         self.champion_positions = []
         self.champion_sprite_map = {}
         available_positions: Optional[tuple[int, int]] = list(positions)
@@ -41,3 +43,19 @@ class Team:
             
     def get_champs(self) -> tuple[GameEntity]:
         return tuple(self.champion_sprite_map.keys())
+
+    @staticmethod
+    def sort_into_team_name_champ_list_map(champion_classes: list[Type[Champion]]) -> dict[str, list[Champion]]:
+        team_champ_registry = { Team.UNDEFINED: [] }
+        for champ_cls in champion_classes:
+            try:
+                team_champ_registry[champ_cls.Team.name].append(champ_cls())
+            except KeyError:
+                team_champ_registry[champ_cls.Team.name] = [champ_cls()]
+            except AttributeError:
+                # champ class doesnt have Team or Team.name specified
+                team_champ_registry[Team.UNDEFINED].append(champ_cls())
+
+        return team_champ_registry
+    
+
