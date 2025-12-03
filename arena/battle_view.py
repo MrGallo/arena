@@ -11,14 +11,18 @@ from arena.mission import (
     Mission,
     WithinRangeObjective,
     StopWithinRangeObjective,
+    FirstPastThePostMission,
 )
 from arena.action import Action
 from arena.settings import Settings
 from arena.base_game import BaseGame
 from arena.mission import Objective
+from arena.team import Team
+
 
 
 class BattleView(BaseView):
+
     class State:
         WAIT = "wait"
         BATTLE = "battle"
@@ -36,9 +40,14 @@ class BattleView(BaseView):
     height = grid_height * cellsize + wall_thickness * 2
     size = width, height
 
-    def __init__(self, champion_classes, spawn_points) -> None:
+    def __init__(self, groups, mission=None) -> None:
         self.champ_sprite_map = {}
+        
+        for group_type, (champions, spawn_points) in groups.items():
+            pass
+        
         champions = [champ_class() for champ_class in champion_classes]
+
 
         self.boundary_rect = pygame.Rect(0, 0, *self.size)
         # self.score_font = pygame.font.SysFont("Arial", 30)
@@ -58,10 +67,13 @@ class BattleView(BaseView):
             champ_sprite = Sprite(champ, spawn_point, self.cellsize)
             champ_sprite.add(self.champ_sprite_group)
             self.champ_sprite_map[champ] = champ_sprite
-        
-        self.mission = Mission(self)
+
+        if mission is None:
+            mission = Mission(self) 
+        self.mission = mission
         self.state = BattleView.State.WAIT 
 
+        self.sprite_missions = {}
     
     def _draw_arena_bg(self) -> None:
         bg = self.scalable_surfaces[self.GROUND_LAYER]
@@ -237,13 +249,20 @@ class BattleView(BaseView):
             text_rect.move_ip(0, wait_heading_text.get_height() + 20)
             self.overlay_surface.blit(instructions_text, text_rect.topleft)
         elif self.state == BattleView.State.END:
-            result_text = Settings.Font.jumbo.render(self.mission.status.upper(), True, Settings.Color.text_heading)
-            text_rect = result_text.get_rect()
-            text_rect.center = self.overlay_surface.get_rect().center
-            self.overlay_surface.blit(result_text, text_rect.topleft)
+            self.mission.draw_end_screen(self.overlay_surface)
+            
 
         # finally blit overlay surface to the screen
         surface.blit(self.overlay_surface, (0, 0))
+    
+    
+    def assign_objective_to_champion(self, objective_cls, champion: GameEntity, *args):
+        sprite = self.champ_sprite_map[champion]
+        if sprite.mission is None:
+            sprite.mission = Mission(self)
+        objective = objective_cls(self, sprite, *args)
+        sprite.mission.add_objective(objective)
+        self.mission.add_objective(objective)
 
 
 class ChampionShowcase(BattleView):
@@ -266,21 +285,30 @@ class ChampionShowcase(BattleView):
         super().__init__(champion_classes, spawn_points)
 
 
-
 class TrainingMoveWithinRangeOfPoint(BattleView):
     """Champions will use the battle.move() method to move to a point"""
     def __init__(self, champion_classes: List[GameEntity]):
-        spawn_points = ((self.width * 0.65, self.height // 2 - self.cellsize // 2),)
-        super().__init__(champion_classes, spawn_points)
+        spawn_point = (self.width * 0.65, self.height // 2 - self.cellsize // 2)
+        groups = {
+            Team.BLUE: ((champion_classes[0], ), (spawn_point, ))
+        }
+        super().__init__(groups)
         self.mission.display_string = "Reach the goal"
-        self.mission.add_objective(
-            WithinRangeObjective(
-                self,
-                self.champ_sprite_group.sprites()[0],
-                (self.width // 2.5, self.height // 2),
-                100
-            )
-        ) 
+
+        self.assign_objective_to_champion(
+            WithinRangeObjective,
+            champion_classes[0],
+            ((self.width // 2.5, self.height // 2),
+                100)
+        )
+        # self.mission.add_objective(
+        #     WithinRangeObjective(
+        #         self,
+        #         self.champ_sprite_group.sprites()[0],
+        #         (self.width // 2.5, self.height // 2),
+        #         100
+        #     )
+        # ) 
     
     def update(self):
         super().update()
@@ -334,10 +362,39 @@ class TrainingReachTwoLocationsAndStop(BattleView):
                 100
             )
         ]) 
-    
-    def update(self):
-        super().update()
 
+    
+
+class RaceBattle(BattleView):
+    def __init__(self, champion_classes: list[GameEntity]):
+        spawn_points = (
+            (self.width * 0.65, self.height // 2 - self.cellsize // 2),
+            (self.width * 0.65, self.height // 2 - self.cellsize // 2),
+        )
+        mission = FirstPastThePostMission(self)
+        super().__init__(champion_classes, spawn_points, mission)
+
+        # objectives = (
+        #     WithinRangeObjective(
+        #         self,
+        #         champion_sprite,
+        #         (self.width * 0.5, self.height * 0.65),
+        #         100
+        #     ),
+        #     StopWithinRangeObjective(
+        #         self,
+        #         champion_sprite,
+        #         (self.width * 0.40, self.height * 0.45),
+        #         100
+        #     )
+        # )
+
+        # self.assign_objectives_to_sprites(objectives, self.champ_sprite_group.sprites())
+        #     # Each champ sprite gets its own mission and objectives associated with them
+        #     for champion_sprite in self.champ_sprite_group.sprites():
+        #         self.sprite_missions[champion_sprite] = Mission(self)
+        #         self.sprite_missions[champion_sprite].add_objectives([
+        #         ])
 
 # move has optional params, need to tutorial those: impulse 0-1 and max_speed
 # TODO: Next movement tutorial move_to ? doesn't that require battle.sense()?

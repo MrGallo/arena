@@ -3,6 +3,8 @@ pygame.font.init()
 
 
 class Settings:
+    cellsize = 50
+
     class Color:
         text_heading = "#000000"
         text_subheading = "#595959"

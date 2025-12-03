@@ -9,6 +9,7 @@ from arena.battle_view import (
     TrainingMoveWithinRangeOfPoint,
     TrainingMoveWithRangeAndStop,
     TrainingReachTwoLocationsAndStop,
+    RaceBattle,
 )
 
 
@@ -18,6 +19,7 @@ VIEW_MAP = {
     "training_movement_01": TrainingMoveWithinRangeOfPoint,
     "training_movement_02": TrainingMoveWithRangeAndStop,
     "training_movement_03": TrainingReachTwoLocationsAndStop,
+    "race_battle": RaceBattle,
 }
 
 

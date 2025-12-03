@@ -1,9 +1,16 @@
+from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
+
+
 
 import pygame
 
-from arena.sprite import Sprite
 from arena.settings import Settings
+
+if TYPE_CHECKING:
+    from arena.sprite import Sprite
+    from arena.battle_view import BattleView
+
 
 
 class Objective(ABC):
@@ -11,7 +18,7 @@ class Objective(ABC):
     SUCCESS = "success"
     FAILURE = "failure"
 
-    def __init__(self, arena, display_string="Unnamed Objective"):
+    def __init__(self, arena: "BattleView", display_string="Unnamed Objective"):
         self.status = Objective.INCOMPLETE
         self.arena = arena  # bound on mission.add_objective()
         self.display_string = display_string
@@ -69,13 +76,21 @@ class Mission(Objective):
     def draw(self, surface: pygame.Surface):
         for obj in self.objectives:
             obj.draw(surface)
+    
+    def draw_end_screen(self, surface: pygame.Surface):
+        result_text = Settings.Font.jumbo.render(self.status.upper(),
+                                                 True,
+                                                 Settings.Color.text_heading)
+        text_rect = result_text.get_rect()
+        text_rect.center = surface.get_rect().center
+        surface.blit(result_text, text_rect.topleft)
         
 
 
 class WithinRangeObjective(Objective):
     def __init__(self,
                  arena,
-                 champion: Sprite,
+                 champion: "Sprite",
                  location: tuple[int, int],
                  radius,
                  display_string=None):
@@ -110,7 +125,7 @@ class WithinRangeObjective(Objective):
 class StopWithinRangeObjective(WithinRangeObjective):
     def __init__(self,
                  arena,
-                 champion: Sprite,
+                 champion: "Sprite",
                  location: tuple[int, int],
                  radius):
         super().__init__(arena, champion, location, radius, f"Stop within {radius} pixels of {location}")
@@ -121,3 +136,29 @@ class StopWithinRangeObjective(WithinRangeObjective):
         is_stopped = self.champion.velocity.magnitude_squared() == 0
         return diff.magnitude_squared() < self.radius ** 2 and is_stopped
     
+ 
+class FirstPastThePostMission(Mission):
+    def __init__(self, arena, display_string="Be the first to complete the objectives"):
+        super().__init__(arena, display_string)
+        self.winner = None
+
+    def success(self) -> bool:
+        for champ_sprite, mission in self.arena.sprite_missions.items():
+            if mission.success():
+                self.winner = champ_sprite.champion
+                return True
+        
+        return False
+
+    def draw_end_screen(self, surface: pygame.Surface):
+        if self.winner is not None:
+            winner_heading = Settings.Font.jumbo.render("WINNER!",
+                                                        True,
+                                                        Settings.Color.text_heading)
+            winner_text = Settings.Font.heading.render(str(self.winner),
+                                                       True,
+                                                       Settings.Color.text_heading)
+            surf_center = surface.get_rect().center
+            text_rect = winner_heading.get_rect()
+            text_rect.center = surf_center
+            surface.blit(winner_heading, text_rect.topleft)

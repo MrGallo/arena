@@ -1,6 +1,9 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
 import pygame
 
 from arena.stats import Stats, ActiveModifiers, StatModifier, CalculatedStats
+from arena.mission import Mission
 
 
 class Sprite(pygame.sprite.Sprite):

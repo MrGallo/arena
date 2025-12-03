@@ -17,15 +17,6 @@ from arena.battle_api import BattleAPI
 
 
 class Champion:
-    class Team:
-        """Optional meta class to help the arena sort the champions into teams and positions.
-        Needs to be present only in BattleViews that have teams.
-
-        Issue: this means the students need to know their team and position well in advance.
-        """
-        team = "The Incredibles"
-        position = 0  # or not there defaults to None, which is place anywhere
-
     def __init__(self) -> None:
         self.frames = 0
         self.phase = 1
@@ -38,18 +29,17 @@ class Champion:
 
     def draw(self, surface: pygame.Surface) -> None:
         # The surface to draw on will be 300x300 pixels in size.
-        surface.fill("#c37b61")
-        pygame.draw.rect(surface, "#000000", (0, 0, surface.get_width(), surface.get_height()), 15)
+        surface.fill("#90c361")
 
     def battle_plan(self, battle: BattleAPI):
         if self.phase == 1:
             battle.move(angle=155)
-            if self.frames / 30 > 4.5: 
+            if self.frames / 30 > 4.0: 
                 self.frames = 0
                 self.phase += 1
         elif self.phase == 2:
             battle.move(angle=225)
-            if self.frames / 30 > 3.5:
+            if self.frames / 30 > 3.0:
                 self.phase += 1
 
 class BaseView:
